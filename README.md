@@ -1,4 +1,3 @@
-# Automated AWS EC2 Server Snoozing & Notification System
 # AWS EC2 Automated Snoozing & Notifications 
 This project implements automated server snoozing and unsnoozing for AWS EC2 instances using Lambda functions, EventBridge scheduling, and SNS notifications. The system reads instance tags and manages scheduled shutdowns and startups while notifying the cloud team via AWS SNS.
 
