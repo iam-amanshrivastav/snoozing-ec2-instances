@@ -1,5 +1,7 @@
 # Lambda function script for starting the server based on the snoozing tags
 
+# This Lambda function will check the ec2 instance tag if in the snoozing value will have "Yes" then lambda function will be triggered and start those ec2 instance based on their timings
+
 import boto3
 import datetime
 import pytz
