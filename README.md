@@ -4,10 +4,15 @@ This project implements automated server snoozing and unsnoozing for AWS EC2 ins
 
 # Features
 ✅ Automated daily snoozing based on EC2 tags
+
 ✅ Two Lambda functions for independent Start/Stop logic
+
 ✅ AWS SNS notifications to alert account owners
+
 ✅ EventBridge scheduling (cron-based execution at 6 AM UTC, Mon-Fri)
+
 ✅ Logs instance details (ID, Name, Type) in notifications
+
 ✅ Flexible snoozing setup via EC2 tags
 
 # Project Architecture
