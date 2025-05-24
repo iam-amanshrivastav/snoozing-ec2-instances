@@ -54,12 +54,12 @@ cloudtrail full access
 Lambda Function: Starting Instances (Start Lambda)
 set the timeout value 
 
-`` 10 ``
+``` 10 ```
 
 Lambda Function: Stopping Instances (Stop Lambda)
 set the timout value
 
-`` 10 ``
+``` 10 ```
 
 
 # Setup EventBridge for Scheduling
@@ -72,7 +72,7 @@ Steps to Configure EventBridge
 
 # Cron Job in the eventbridge will be 
 
-`` cron(0 6 ? * MON-FRI *) ``
+``` cron(0 6 ? * MON-FRI *) ```
 
 Choose Lambda as Target:
 - Attach Start Lambda to one rule
