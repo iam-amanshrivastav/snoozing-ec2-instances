@@ -53,10 +53,12 @@ cloudtrail full access
 # Deploy Lambda Functions
 Lambda Function: Starting Instances (Start Lambda)
 set the timeout value 
+
 `` 10 ``
 
 Lambda Function: Stopping Instances (Stop Lambda)
 set the timout value
+
 `` 10 ``
 
 
