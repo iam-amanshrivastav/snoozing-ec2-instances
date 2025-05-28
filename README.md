@@ -8,7 +8,7 @@ This project implements automated server snoozing and unsnoozing for AWS EC2 ins
 
  AWS SNS notifications to alert account owners
 
- EventBridge scheduling (cron-based execution at 7 AM IST, Mon-Fri)
+ EventBridge scheduling (cron-based execution at 7 AM UTC, Mon-Fri)
 
  Logs instance details (ID, Name, Type) in notifications
 
@@ -67,7 +67,7 @@ Steps to Configure EventBridge
 2. Click Rules → Create Rule
 3. Rule Name: "Server-Snoozing-Hourly"
 4. Choose Schedule-based trigger
-5. Set the cron expression for execution at 7 AM UTC/IST or your prefrence, Monday-Friday
+5. Set the cron expression for execution at 7 AM UTC or your prefrence, Monday-Friday
 
 # Cron Job in the eventbridge will be 
 
