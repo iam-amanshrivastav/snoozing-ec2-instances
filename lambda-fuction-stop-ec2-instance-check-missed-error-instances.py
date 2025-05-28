@@ -11,7 +11,7 @@ import pytz
 ec2 = boto3.client('ec2')
 sns = boto3.client('sns')
 
-SNS_TOPIC_ARN = "arn:aws:sns:eu-west-1:619071349184:Server-start-alert"
+SNS_TOPIC_ARN = "arn:aws:sns:eu-west-1:619071349184:Server-stop-alerts"
 
 def lambda_handler(event, context):
     # Get current UTC time
@@ -19,9 +19,9 @@ def lambda_handler(event, context):
     print(f"Current UTC time: {now}")
 
     affected_instances = []
-    skipped_instances = []
+    missing_tag_instances = []
 
-    # Retrieve all EC2 instances in the account
+    # Retrieve all EC2 instances in the region
     instances = ec2.describe_instances()
 
     for reservation in instances['Reservations']:
@@ -33,40 +33,43 @@ def lambda_handler(event, context):
             # Extract instance tags
             tags = {t['Key']: t['Value'] for t in instance.get('Tags', [])}
             instance_name = tags.get("Name", "Unnamed")
-            start_time = tags.get("server-start-mon-friday", "").strip()
+            stop_time = tags.get("server-stop-mon-friday", "").strip()
             snoozing_status = tags.get("Snoozing", "").strip()
 
-            print(f"Checking instance: {instance_name} ({instance_id}) - State: {instance_state}, Scheduled Start Time: {start_time}, Snoozing Tag: {snoozing_status}")
+            print(f"Checking instance: {instance_name} ({instance_id}) - State: {instance_state}, Scheduled Stop Time: {stop_time}, Snoozing Tag: {snoozing_status}")
 
-            # Start instance only if 'Snoozing' is set to 'Yes' and the start time matches
-            if snoozing_status == "Yes" and now == start_time and instance_state == 'stopped':
-                print(f"Starting instance: {instance_name} ({instance_id})")
+            # Allow a 5-minute execution window for stopping instances
+            time_format = "%H:%M"
+            now_dt = datetime.datetime.strptime(now, time_format)
+            stop_time_dt = datetime.datetime.strptime(stop_time, time_format) if stop_time else None
+
+            # Stop the instance if the conditions match within the time window
+            if snoozing_status == "Yes" and stop_time and stop_time_dt and stop_time_dt <= now_dt <= (stop_time_dt + datetime.timedelta(minutes=5)) and instance_state == 'running':
+                print(f"Stopping instance: {instance_name} ({instance_id})")
                 try:
-                    ec2.start_instances(InstanceIds=[instance_id])
-                    affected_instances.append(f"Started: {instance_name} ({instance_id}, {instance_type})")
+                    ec2.stop_instances(InstanceIds=[instance_id])
+                    affected_instances.append(f"Stopped: {instance_name} ({instance_id}, {instance_type})")
                 except Exception as e:
-                    print(f"Error starting instance {instance_id}: {e}")
-                    skipped_instances.append(f"Failed to start: {instance_name} ({instance_id}) - Error: {e}")
+                    print(f"Error stopping instance {instance_id}: {e}")
 
-            # Log instances that are missing tags or have incorrect configurations
-            elif snoozing_status != "Yes" or not start_time:
-                skipped_instances.append(f"Skipped: {instance_name} ({instance_id}) - Snoozing tag missing or incorrect")
+            # Identify instances missing tags or not set for snoozing
+            elif snoozing_status != "Yes" or not stop_time:
+                missing_tag_instances.append(f"Hi, this machine ({instance_name}, {instance_id}, {instance_type}) is either not in snoozing or tags are missing. Kindly review it.")
 
     # Build the SNS email report
-    email_message = "AWS EC2 Instance Startup Report\n\n"
+    email_message = "AWS EC2 Instance Shutdown Report\n\n"
     if affected_instances:
-        email_message += " Instances Started:\n" + "\n".join(affected_instances) + "\n\n"
-    if skipped_instances:
-        email_message += " Instances Skipped:\n" + "\n".join(skipped_instances) + "\n\n"
+        email_message += "Successfully Stopped Instances:\n" + "\n".join(affected_instances) + "\n\n"
+    if missing_tag_instances:
+        email_message += "Review Required for Instances:\n" + "\n".join(missing_tag_instances) + "\n\n"
 
     # Send SNS notification
-    if affected_instances or skipped_instances:
+    if affected_instances or missing_tag_instances:
         sns.publish(
             TopicArn=SNS_TOPIC_ARN,
             Message=email_message,
-            Subject="AWS EC2 Start Notification"
+            Subject="AWS EC2 Stop Notification"
         )
 
-    return {"status": "Start process completed", "affected_instances": affected_instances, "skipped_instances": skipped_instances}
-
+    return {"status": "Stop process completed", "affected_instances": affected_instances, "missing_tag_instances": missing_tag_instances}
 
